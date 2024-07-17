@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:5.7
+    volumes:
+      - todo-mysql-data:/var/lib/mysql
+      - ./init-user.sql:/docker-entrypoint-initdb.d/init-user.sql
+    networks:
+      - todo-network
+    environment:
+      MYSQL_DATABASE: todos
+      MYSQL_ROOT_PASSWORD: secret
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u root -psecret || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    image: maximepolese/todo-app:1.2.0
+    ports:
+      - 3000:3000
+    networks:
+      - todo-network
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: new_secret
+      MYSQL_DB: todos
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  todo-mysql-data:
+
+networks:
+  todo-network:
